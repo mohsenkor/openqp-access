@@ -109,6 +109,13 @@ create policy "create own request" on public.access_requests
 -- No update or delete policy: people cannot change their own status. The
 -- professor reviews 'pending' rows in Table Editor and sets status there.
 
+-- Table privileges. Some projects do not give new tables to the API roles
+-- automatically; signed-in people need SELECT and INSERT (the policies above
+-- still limit them to their own row), visitors who are not signed in get none.
+revoke all on public.access_requests from anon;
+grant select, insert on public.access_requests to authenticated;
+revoke all on public.academic_domains from anon, authenticated;
+
 -- 3. Private file bucket ---------------------------------------------------
 insert into storage.buckets (id, name, public)
 values ('binaries', 'binaries', false)
