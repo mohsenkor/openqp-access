@@ -27,7 +27,6 @@
   }
 
   var db = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
-  var minutes = cfg.downloadLinkMinutes || 60;
 
   // ---- signed out: ask for an email, send a one-time sign-in link ----------
   function renderSignIn() {
@@ -151,11 +150,28 @@
     );
   }
 
-  // ---- approved: list the files and hand out time-limited links -------------
+  // ---- approved: list the files and hand out short-lived links ---------------
+  // The files are in a private GitHub release. The "download" function checks
+  // that this person is approved and asks GitHub for a link to one file; that
+  // link works for a few minutes and needs no GitHub account.
+  function callDownload(body) {
+    return db.functions.invoke("download", { body: body }).then(function (r) {
+      if (r.error) {
+        var ctx = r.error.context;
+        if (ctx && typeof ctx.json === "function") {
+          return ctx.json().then(function (j) { throw new Error(j.error || r.error.message); },
+                                 function () { throw new Error(r.error.message); });
+        }
+        throw new Error(r.error.message);
+      }
+      return r.data;
+    });
+  }
+
   function renderDownloads(user, req) {
     show(
       '<div class="card"><h2>Downloads</h2>' +
-      "<p>Access approved for " + esc(req.email) + ". Each link works for " + minutes + " minutes.</p>" +
+      '<p>Access approved for ' + esc(req.email) + '. Click "Get download link" next to a file; the link works for a few minutes.</p>' +
       '<div id="files" class="files"><p>Loading files…</p></div>' +
       '<div class="row"><button id="mail" type="button">Email me a link to this page</button></div>' +
       '<p id="msg" class="msg" hidden></p></div>'
@@ -167,30 +183,33 @@
           else message("ok", "Sent to " + user.email + ". The link in it signs you in and opens your downloads.");
         });
     });
-    db.storage.from("binaries").list("", { limit: 100, sortBy: { column: "name", order: "asc" } }).then(function (r) {
+    callDownload({ action: "list" }).then(function (data) {
       var box = document.getElementById("files");
-      if (r.error) { box.innerHTML = "<p>Could not list the files: " + esc(r.error.message) + "</p>"; return; }
-      var files = (r.data || []).filter(function (f) { return f.name && f.name.charAt(0) !== "." && f.id; });
-      if (!files.length) { box.innerHTML = "<p>No files have been uploaded yet.</p>"; return; }
-      box.innerHTML = files.map(function (f, i) {
-        var size = f.metadata && f.metadata.size ? (f.metadata.size / 1048576).toFixed(1) + " MB" : "";
-        return '<div class="file"><span class="name">' + esc(f.name) + '</span><span class="size">' + size +
-               '</span><button type="button" data-i="' + i + '">Get download link</button></div>';
-      }).join("");
+      var files = (data && data.files) || [];
+      if (!files.length) { box.innerHTML = "<p>No files are available yet.</p>"; return; }
+      box.innerHTML = '<p class="fine">OpenQP ' + esc(String(data.release || "").replace(/^v/, "")) + '</p>' +
+        files.map(function (f, i) {
+          var size = f.size ? (f.size / 1048576).toFixed(1) + " MB" : "";
+          return '<div class="file"><span class="name">' + esc(f.name) + '</span><span class="size">' + size +
+                 '</span><button type="button" data-i="' + i + '">Get download link</button></div>';
+        }).join("");
       box.querySelectorAll("button[data-i]").forEach(function (b) {
         b.addEventListener("click", function () {
           var f = files[+b.getAttribute("data-i")];
           b.disabled = true;
-          db.storage.from("binaries").createSignedUrl(f.name, minutes * 60, { download: true }).then(function (s) {
-            b.disabled = false;
-            if (s.error) { message("bad", "Could not create the link: " + s.error.message); return; }
+          callDownload({ action: "link", asset_id: f.id }).then(function (d) {
             var a = document.createElement("a");
-            a.href = s.data.signedUrl; a.textContent = "Download " + f.name; a.className = "dl";
+            a.href = d.url; a.textContent = "Download " + f.name; a.className = "dl";
             a.rel = "noopener";
             b.replaceWith(a);
+          }, function (e) {
+            b.disabled = false;
+            message("bad", "Could not create the link: " + e.message);
           });
         });
       });
+    }, function (e) {
+      document.getElementById("files").innerHTML = "<p>Could not list the files: " + esc(e.message) + "</p>";
     });
   }
 

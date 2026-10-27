@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Download OpenQP: free for academic and nonprofit research and teaching.">
+<title>Download OpenQP</title>
+<link rel="icon" href="/images/old-site/normal.png">
+<link rel="stylesheet" href="/_astro/BaseLayout.DN7PpH-S.css">
+<style>
+/* The sign-up box, in the site's own colours (variables from BaseLayout.css). */
+.oqp-access { max-width: 680px; display: grid; gap: 14px; }
+.oqp-access .who { color: var(--muted); font-size: .95rem; min-height: 1.4em; margin: 0; }
+.oqp-access .card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 24px; display: grid; gap: 14px; }
+.oqp-access h2 { margin: 0; font-size: 1.5rem; }
+.oqp-access p { margin: 0; }
+.oqp-access .stack { display: grid; gap: 8px; }
+.oqp-access label { font-weight: 650; font-size: .95rem; }
+.oqp-access input[type=email], .oqp-access input:not([type]), .oqp-access textarea {
+  font: inherit; color: var(--ink); background: #fff; border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; width: 100%; box-sizing: border-box; }
+.oqp-access .check { display: flex; gap: 10px; align-items: flex-start; font-weight: 400; }
+.oqp-access .check input { margin-top: 5px; }
+.oqp-access button { font: inherit; min-height: 44px; padding: 10px 16px; border-radius: 6px; border: 1px solid var(--line); background: #fff; color: var(--ink); cursor: pointer; font-weight: 650; }
+.oqp-access button.primary { background: var(--blue); border-color: var(--blue); color: #fff; font-weight: 750; }
+.oqp-access button.link { min-height: 0; border: 0; padding: 0; background: none; color: var(--blue); text-decoration: underline; font-weight: 400; }
+.oqp-access button:disabled { opacity: .5; cursor: wait; }
+.oqp-access button:focus-visible, .oqp-access input:focus-visible, .oqp-access textarea:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.oqp-access .or { text-align: center; color: var(--muted); font-size: .9rem; }
+.oqp-access .hint { font-size: .92rem; }
+.oqp-access .hint.ok, .oqp-access .msg.ok { color: var(--green); }
+.oqp-access .hint.warn { color: var(--gold); }
+.oqp-access .msg.bad { color: var(--coral); }
+.oqp-access .msg { font-size: .95rem; }
+.oqp-access .fine { color: var(--muted); font-size: .88rem; }
+.oqp-access .files { display: grid; gap: 8px; }
+.oqp-access .file { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; justify-content: space-between; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+.oqp-access .file .name { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .9rem; overflow-wrap: anywhere; }
+.oqp-access .file .size { color: var(--muted); font-size: .88rem; }
+.oqp-access .dl { font-weight: 750; color: var(--blue); }
+.oqp-access .row { display: flex; flex-wrap: wrap; gap: 10px; }
+.oqp-access code { font-size: .9em; }
+</style>
+</head>
+<body>
+<header class="site-header">
+  <a class="brand" href="/" aria-label="OpenQP home"><span class="brand-mark">OQ</span><span><strong>OpenQP</strong><small>Open Quantum Platform</small></span></a>
+  <nav class="nav-links" aria-label="Main navigation">
+    <a href="/openqp/">OpenQP</a>
+    <a href="/openqp/development/">Development</a>
+    <a href="/company/">Company</a>
+    <a href="/lab/">Lab</a>
+    <a href="/research/">Research</a>
+    <a href="/people/">People</a>
+    <a href="/publications/">Publications</a>
+    <a href="/news/">News</a>
+    <a href="/contact/">Contact</a>
+    <a href="https://app.openqp.org/">Try OpenQP Web</a>
+  </nav>
+</header>
+<main>
+  <section class="page-hero">
+    <p class="eyebrow">Download</p>
+    <h1>Download OpenQP</h1>
+    <p>OpenQP is free for academic and nonprofit research and teaching. Sign in with your university email to get the ready-to-run programs for Linux, macOS and Windows.</p>
+  </section>
+  <section class="band">
+    <div class="oqp-access">
+      <p class="who" id="who"></p>
+      <div id="view"><div class="card"><p>Loading…</p></div></div>
+      <p class="fine">Use by or for a company needs a separate written commercial licence from Open Quantum Inc.; see Section 13 of the <a href="https://github.com/Open-Quantum-Platform/openqp-releases/blob/main/LICENSE">OpenQP Research License 1.0</a>.</p>
+    </div>
+  </section>
+</main>
+<footer class="site-footer">
+  <div><strong>Open Quantum Platform</strong><p>Open-source quantum chemistry, company-backed development, and research from KNU.</p></div>
+  <div class="footer-links">
+    <a href="https://github.com/Open-Quantum-Platform/openqp-releases/releases/latest">OpenQP Releases</a>
+    <a href="https://openqp.readthedocs.io/">Documentation</a>
+    <a href="mailto:cheolho.choi@gmail.com">Contact</a>
+  </div>
+</footer>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

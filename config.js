@@ -7,6 +7,5 @@ window.OQP_ACCESS_CONFIG = {
   // Show "Sign in with GitHub" too. Turn on only after enabling the GitHub
   // provider under Authentication -> Providers in Supabase.
   enableGitHub: false,
-  licenceUrl: "https://github.com/Open-Quantum-Platform/openqp-releases/blob/main/LICENSE",
-  downloadLinkMinutes: 60
+  licenceUrl: "https://github.com/Open-Quantum-Platform/openqp-releases/blob/main/LICENSE"
 };
