@@ -1,6 +1,7 @@
 <?php
 // OpenQP downloads on qchem.knu.ac.kr (PHP 7.4, MySQL, local postfix).
-//  1. A visitor asks for a sign-in link; it is emailed and works once, for 20 minutes.
+//  1. A visitor asks for a sign-in link and accepts the Academic Use Agreement; the
+//     link is emailed and works once, for 20 minutes.
 //  2. Signed in, they give name, institution and use, and accept the licence.
 //  3. A university email is approved at once; others wait for an admin.
 //  4. Approved people get short-lived links to the files of a private GitHub release.
@@ -12,6 +13,7 @@ $cfg = require __DIR__ . '/config.php';
 const LOGIN_MINUTES = 20;
 const SESSION_HOURS = 12;
 const LICENCE = 'OpenQP Research License 1.0';
+const AGREEMENT = 'OpenQP Academic Use and Good-Faith Research Agreement, 2026-10-27';   // text: agreement.php
 
 header('X-Frame-Options: DENY');
 header('X-Content-Type-Options: nosniff');
@@ -98,10 +100,12 @@ function too_many_mails(string $email): bool {
     $by_ip = (int)q('SELECT COUNT(*) FROM mail_log WHERE ip = ? AND sent_at > ?', [ip(), $hour])->fetchColumn();
     return $by_email >= 3 || $by_ip >= 10;
 }
-function send_login_link(string $email): void {
+// $agreement: the agreement version accepted with this request (null when a signed-in
+// person asks for a link to the page again).
+function send_login_link(string $email, ?string $agreement): void {
     $secret = bin2hex(random_bytes(32));
-    q('INSERT INTO login_tokens (token_hash, email, created_at, expires_at, ip) VALUES (?, ?, ?, ?, ?)',
-      [hash('sha256', $secret), $email, now(), gmdate('Y-m-d H:i:s', time() + LOGIN_MINUTES * 60), ip()]);
+    q('INSERT INTO login_tokens (token_hash, email, created_at, expires_at, ip, agreement_version) VALUES (?, ?, ?, ?, ?, ?)',
+      [hash('sha256', $secret), $email, now(), gmdate('Y-m-d H:i:s', time() + LOGIN_MINUTES * 60), ip(), $agreement]);
     $link = page_url() . '?login=' . $secret;
     send_mail($email, 'Your OpenQP download sign-in link',
         "Open this link to sign in to the OpenQP download page:\n\n$link\n\n"
@@ -157,6 +161,7 @@ if (isset($_GET['login'])) {
     session_regenerate_id(true);
     $_SESSION['email'] = $row['email'];
     $_SESSION['since'] = time();
+    $_SESSION['agreement'] = $row['agreement_version'] !== null ? [$row['agreement_version'], $row['created_at']] : null;
     go();
 }
 
@@ -165,7 +170,12 @@ if ($action !== '') { check_csrf(); }
 if ($action === 'send_link') {
     $email = clean_email((string)($_POST['email'] ?? ''));
     if ($email === null) { flash('bad', 'Enter a valid email address.'); go(); }
-    if (!too_many_mails($email)) { send_login_link($email); }
+    if (empty($_POST['agree'])) {   // no email before the agreement is accepted
+        $_SESSION['agree_email'] = $email;
+        go('agreement');
+    }
+    unset($_SESSION['agree_email']);
+    if (!too_many_mails($email)) { send_login_link($email, AGREEMENT); }
     flash('ok', "If $email can receive email, a sign-in link is on its way. Open it within " . LOGIN_MINUTES . ' minutes.');
     go();
 }
@@ -175,7 +185,7 @@ if ($action === 'logout') {
     go();
 }
 if ($me !== null && $action === 'email_link') {
-    if (!too_many_mails($me)) { send_login_link($me); }
+    if (!too_many_mails($me)) { send_login_link($me, null); }
     flash('ok', "Sent to $me. The link in it signs you in and opens your downloads.");
     go();
 }
@@ -188,9 +198,11 @@ if ($me !== null && $action === 'details') {
     }
     if (empty($_POST['academic']) || empty($_POST['licence'])) { flash('bad', 'Tick both boxes to accept the licence terms.'); go(); }
     $status = is_academic($me) ? 'approved' : 'pending';
-    q('INSERT IGNORE INTO access_requests (email, full_name, institution, purpose, licence_version, licence_accepted_at, status, created_at, decided_at, decided_by)'
-      . ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [$me, $name, $inst, $purpose !== '' ? $purpose : null, LICENCE, now(), $status, now(),
+    [$agreement, $agreed_at] = $_SESSION['agreement'] ?? [null, null];
+    q('INSERT IGNORE INTO access_requests (email, full_name, institution, purpose, licence_version, licence_accepted_at,'
+      . ' agreement_version, agreement_accepted_at, status, created_at, decided_at, decided_by)'
+      . ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [$me, $name, $inst, $purpose !== '' ? $purpose : null, LICENCE, now(), $agreement, $agreed_at, $status, now(),
        $status === 'approved' ? now() : null, $status === 'approved' ? 'university email' : null]);
     go();
 }
@@ -236,15 +248,31 @@ $req = $me !== null ? q('SELECT * FROM access_requests WHERE email = ?', [$me])-
 ob_start();
 if ($flash) { echo '<p class="msg ' . h($flash[0]) . '">' . h($flash[1]) . '</p>'; }
 
-if ($me === null) { ?>
+if ($me === null) {
+    // The button opens the agreement (agreement.js); without JavaScript the server shows it after the first click.
+    $agree_email = (string)($_SESSION['agree_email'] ?? '');
+    $show_agreement = isset($_GET['agreement']) && $agree_email !== ''; ?>
   <div class="card"><h2>Get OpenQP</h2>
     <p>OpenQP is free for academic and nonprofit research and teaching. Sign in with your university email: we email you a one-time link, there is no password. University addresses get access right away; other addresses are reviewed by hand.</p>
-    <form method="post" class="stack"><?= csrf_field() ?><input type="hidden" name="action" value="send_link">
+    <form method="post" class="stack" id="signin"><?= csrf_field() ?><input type="hidden" name="action" value="send_link">
       <label for="email">Email</label>
-      <input id="email" name="email" type="email" autocomplete="email" required placeholder="name@university.ac.kr">
+      <input id="email" name="email" type="email" autocomplete="email" required placeholder="name@university.ac.kr" value="<?= h($agree_email) ?>">
       <button class="primary" type="submit">Email me a sign-in link</button>
     </form>
   </div>
+  <dialog id="agreement" class="agreement<?= $show_agreement ? ' fallback' : '' ?>" aria-labelledby="agreement-title"<?= $show_agreement ? ' open' : '' ?>>
+    <form method="post"><?= csrf_field() ?><input type="hidden" name="action" value="send_link"><input type="hidden" name="email" value="<?= h($agree_email) ?>">
+      <div class="agreement-head"><h2 id="agreement-title">OpenQP Academic Use and Good-Faith Research Agreement</h2></div>
+      <div class="agreement-text" tabindex="0" autofocus><?php require __DIR__ . '/agreement.php'; ?></div>
+      <div class="agreement-foot">
+        <h3>Acceptance</h3>
+        <label class="check"><input type="checkbox" name="agree" value="1" required> <strong>I have read and agree to this Agreement and the license accompanying this OpenQP version. I confirm that my intended use qualifies for free academic and noncommercial use, or that I hold an appropriate written commercial license.</strong></label>
+        <p class="fine">The license for this version: <a href="/download/LICENSE.txt" target="_blank" rel="noopener"><?= h(LICENCE) ?></a>.</p>
+        <div class="row"><button class="primary" type="submit">I Agree and Download</button><button type="submit" formmethod="dialog" formnovalidate>Cancel</button></div>
+      </div>
+    </form>
+  </dialog>
+  <script src="/download/agreement.js" defer></script>
 <?php } elseif (!$req) { $academic = is_academic($me); ?>
   <div class="card"><h2>Your details</h2>
     <p>We detected your email <strong><?= h($me) ?></strong>. <?= $academic

@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS login_tokens (
   expires_at DATETIME     NOT NULL,
   used_at    DATETIME     NULL,
   ip         VARCHAR(45)  NULL,
+  agreement_version VARCHAR(100) NULL,   -- agreement accepted when the link was requested (at created_at, from ip)
   KEY (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -43,6 +44,8 @@ CREATE TABLE IF NOT EXISTS access_requests (
   purpose             VARCHAR(2000) NULL,
   licence_version     VARCHAR(60)   NOT NULL,
   licence_accepted_at DATETIME      NOT NULL,
+  agreement_version   VARCHAR(100)  NULL,
+  agreement_accepted_at DATETIME    NULL,
   status              ENUM('approved','pending','declined') NOT NULL,
   created_at          DATETIME      NOT NULL,
   decided_at          DATETIME      NULL,
@@ -58,3 +61,11 @@ CREATE TABLE IF NOT EXISTS download_log (
   at         DATETIME     NOT NULL,
   KEY (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Columns added after the first install (2026-10-27); MySQL 8.0 has no ADD COLUMN IF NOT EXISTS.
+SET @add := (SELECT IF(COUNT(*) = 0, 'ALTER TABLE login_tokens ADD COLUMN agreement_version VARCHAR(100) NULL AFTER ip', 'DO 0')
+             FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'login_tokens' AND column_name = 'agreement_version');
+PREPARE st FROM @add; EXECUTE st; DEALLOCATE PREPARE st;
+SET @add := (SELECT IF(COUNT(*) = 0, 'ALTER TABLE access_requests ADD COLUMN agreement_version VARCHAR(100) NULL AFTER licence_accepted_at, ADD COLUMN agreement_accepted_at DATETIME NULL AFTER agreement_version', 'DO 0')
+             FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'access_requests' AND column_name = 'agreement_version');
+PREPARE st FROM @add; EXECUTE st; DEALLOCATE PREPARE st;

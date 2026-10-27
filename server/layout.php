@@ -39,6 +39,22 @@
 .oqp-access .table { overflow-x: auto; }
 .oqp-access table { border-collapse: collapse; width: 100%; font-size: .9rem; }
 .oqp-access th, .oqp-access td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.oqp-access dialog.agreement { width: min(760px, calc(100vw - 32px)); max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px);
+  padding: 0; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--ink); box-sizing: border-box; }
+.oqp-access dialog.agreement::backdrop { background: rgba(22, 32, 42, .55); }
+.oqp-access dialog.agreement.fallback { position: fixed; inset: 0; margin: auto; z-index: 100; box-shadow: 0 0 0 100vmax rgba(22, 32, 42, .55); }
+.oqp-access dialog.agreement[open] { display: flex; flex-direction: column; overflow: hidden; }
+.oqp-access dialog.agreement form { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+.oqp-access .agreement-head { flex: none; padding: 18px 24px 14px; border-bottom: 1px solid var(--line); }
+.oqp-access .agreement-head h2 { font-size: 1.25rem; }
+.oqp-access .agreement-text { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 16px 24px 20px; display: grid; gap: 10px; line-height: 1.55; }
+.oqp-access .agreement-text:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
+.oqp-access .agreement-foot { flex: none; padding: 14px 24px 18px; border-top: 1px solid var(--line); display: grid; gap: 10px; }
+.oqp-access .agreement-foot h3 { margin: 0; }
+@media (max-width: 560px) {
+  .oqp-access .agreement-head, .oqp-access .agreement-text, .oqp-access .agreement-foot { padding-left: 16px; padding-right: 16px; }
+  .oqp-access .agreement-foot .row button { flex: 1 1 100%; }
+}
 </style>
 </head>
 <body>
