@@ -9,6 +9,7 @@
 <link rel="icon" href="/images/old-site/normal.png">
 <link rel="stylesheet" href="/_astro/BaseLayout.DN7PpH-S.css">
 <style>
+.nav-links a[aria-current=page] { border-color: var(--teal); }
 .oqp-access { max-width: 760px; display: grid; gap: 14px; }
 .oqp-access .who { color: var(--muted); font-size: .95rem; min-height: 1.4em; margin: 0; }
 .oqp-access .card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 24px; display: grid; gap: 14px; }
@@ -62,6 +63,7 @@
   <a class="brand" href="/" aria-label="OpenQP home"><span class="brand-mark">OQ</span><span><strong>OpenQP</strong><small>Open Quantum Platform</small></span></a>
   <nav class="nav-links" aria-label="Main navigation">
     <a href="/openqp/">OpenQP</a>
+    <a href="/download/" aria-current="page">Download</a>
     <a href="/openqp/development/">Development</a>
     <a href="/company/">Company</a>
     <a href="/lab/">Lab</a>
